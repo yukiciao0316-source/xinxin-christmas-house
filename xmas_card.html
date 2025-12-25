@@ -1,0 +1,1632 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>昕昕的圣诞奇妙屋</title>
+  <style>
+    /* =========================================================
+       Theme
+    ========================================================== */
+    :root{
+      --bg0:#160b08;
+      --bg1:#2a160f;
+      --wood0:#3a2417;
+      --wood1:#23140c;
+      --warm:#ffd7b0;
+      --warm2:#ffb26b;
+      --warm3:#ff7a5a;
+      --text:#fff2e1;
+      --muted:rgba(255,242,225,.78);
+      --card:rgba(255, 236, 210, .08);
+      --card2:rgba(255, 215, 170, .10);
+      --shadow:rgba(0,0,0,.38);
+      --treeOn: 1;
+      --fire: 1;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background:
+        radial-gradient(1200px 700px at 50% 8%, rgba(255,170,90,.18), transparent 62%),
+        radial-gradient(900px 600px at 70% 20%, rgba(255,120,90,.12), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      color: var(--text);
+      overflow:hidden;
+    }
+
+    /* prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce){
+      *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+    }
+
+    /* =========================================================
+       Layers
+    ========================================================== */
+    .scene{
+      position:relative;
+      width:100%;
+      height:100%;
+      min-height:640px;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      padding: clamp(14px, 2.4vw, 28px);
+      isolation:isolate;
+    }
+
+    #snowCanvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index:1;
+      pointer-events:none;
+      opacity:.95;
+      filter: drop-shadow(0 0 6px rgba(255,255,255,.08));
+    }
+
+    .ambient{
+      position:absolute;
+      inset:-2px;
+      z-index:0;
+      pointer-events:none;
+      background:
+        radial-gradient(900px 520px at 20% 75%, rgba(255,155,80,.22), transparent 60%),
+        radial-gradient(820px 520px at 70% 75%, rgba(255,120,90,.16), transparent 60%),
+        radial-gradient(1200px 800px at 50% 0%, rgba(255,210,160,.14), transparent 65%);
+      mix-blend-mode: screen;
+      opacity:.85;
+    }
+
+    .room{
+      position:relative;
+      z-index:2;
+      width:min(1120px, 100%);
+      height:min(760px, 100%);
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      background:
+        radial-gradient(1200px 800px at 45% -10%, rgba(255,220,180,.10), transparent 65%),
+        linear-gradient(180deg, rgba(255,235,210,.06), rgba(255,210,170,.02)),
+        linear-gradient(180deg, #20120c, #180e0a);
+    }
+
+    .wall{
+      position:absolute;
+      inset:0 0 22% 0;
+      background:
+        linear-gradient(180deg, rgba(255,210,160,.06), transparent 50%),
+        repeating-linear-gradient(90deg,
+          rgba(255, 205, 160,.06) 0px,
+          rgba(255, 205, 160,.06) 10px,
+          rgba(0,0,0,.06) 10px,
+          rgba(0,0,0,.06) 22px
+        ),
+        linear-gradient(180deg, #2b170f, #1d100b);
+      filter: saturate(1.05);
+    }
+    .bokeh{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:1;
+      background:
+        radial-gradient(90px 90px at 12% 28%, rgba(255,180,110,.12), transparent 60%),
+        radial-gradient(120px 120px at 26% 14%, rgba(255,120,90,.10), transparent 60%),
+        radial-gradient(110px 110px at 82% 20%, rgba(255,200,140,.10), transparent 60%),
+        radial-gradient(140px 140px at 70% 10%, rgba(255,140,100,.08), transparent 62%),
+        radial-gradient(160px 160px at 48% 18%, rgba(255,220,170,.08), transparent 62%);
+      opacity:.85;
+      mix-blend-mode: screen;
+    }
+    .floor{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      height:26%;
+      background:
+        radial-gradient(900px 260px at 50% 0%, rgba(255, 160, 90,.18), transparent 70%),
+        repeating-linear-gradient(90deg,
+          rgba(255, 210, 170,.06) 0px,
+          rgba(255, 210, 170,.06) 12px,
+          rgba(0,0,0,.12) 12px,
+          rgba(0,0,0,.12) 30px
+        ),
+        linear-gradient(180deg, #24140d, #160c08);
+      box-shadow: inset 0 18px 40px rgba(0,0,0,.35);
+    }
+
+    /* =========================================================
+       Header
+    ========================================================== */
+    header{
+      position:absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index:6;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      pointer-events:none;
+    }
+    .titleCard{
+      pointer-events:auto;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,240,220,.10), rgba(255,210,170,.06));
+      border: 1px solid rgba(255,220,180,.14);
+      box-shadow: 0 10px 28px rgba(0,0,0,.30);
+      backdrop-filter: blur(6px);
+      max-width: 78%;
+    }
+    h1{
+      margin:0;
+      font-size: clamp(22px, 3.2vw, 36px);
+      line-height:1.12;
+      letter-spacing:.2px;
+      color: rgba(255,250,245,.94);
+      text-shadow: 0 2px 14px rgba(255, 190, 120, .14);
+    }
+    .hud{
+      pointer-events:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,240,220,.08), rgba(255,210,170,.04));
+      border: 1px solid rgba(255,220,180,.12);
+      box-shadow: 0 10px 26px rgba(0,0,0,.28);
+      backdrop-filter: blur(6px);
+      color: rgba(255,242,225,.86);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .hud b{ font-weight:800; color: rgba(255,250,245,.94); }
+    .hud .pip{
+      width:10px; height:10px; border-radius:999px;
+      background:
+        radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.15) 55%, rgba(255,255,255,.0) 70%),
+        radial-gradient(circle at 35% 40%, rgba(255,160,90,.9), rgba(255,160,90,.18) 58%, transparent 70%);
+      box-shadow: 0 0 14px rgba(255,160,90,.45);
+      flex:0 0 auto;
+    }
+
+    /* =========================================================
+       String Lights
+    ========================================================== */
+    .stringLights{
+      position:absolute;
+      top:0;
+      left:-4%;
+      width:108%;
+      height: 96px;
+      z-index:5;
+      pointer-events:none;
+    }
+    .wire{
+      position:absolute;
+      top: 36px;
+      left:0; right:0;
+      height: 2px;
+      background:
+        radial-gradient(120px 10px at 10% 50%, rgba(255,210,170,.32), transparent 60%),
+        radial-gradient(120px 10px at 90% 50%, rgba(255,210,170,.28), transparent 60%),
+        linear-gradient(90deg, rgba(0,0,0,.25), rgba(255,210,170,.18), rgba(0,0,0,.25));
+      transform: rotate(-1.2deg);
+      opacity:.9;
+    }
+    .bulbs{
+      position:absolute;
+      top: 44px;
+      left:0; right:0;
+      display:flex;
+      justify-content:space-around;
+      padding: 0 2.5%;
+      gap: 14px;
+      transform: rotate(-1.2deg);
+    }
+    .bulb{
+      width: 18px; height: 26px;
+      border-radius: 10px 10px 12px 12px;
+      position:relative;
+      filter: saturate(1.1);
+    }
+    .bulb::before{
+      content:"";
+      position:absolute;
+      top:-6px;
+      left:50%;
+      transform:translateX(-50%);
+      width: 12px; height: 8px;
+      border-radius: 3px 3px 4px 4px;
+      background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(0,0,0,.28));
+      box-shadow: 0 2px 6px rgba(0,0,0,.35);
+      opacity:.85;
+    }
+    .bulb::after{
+      content:"";
+      position:absolute;
+      inset:-18px -16px -26px -16px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 50% 35%, rgba(255,240,220,.16), rgba(255,240,220,0) 62%);
+      opacity:.55;
+      mix-blend-mode: screen;
+      pointer-events:none;
+    }
+    @keyframes breathe{
+      0%,100%{ filter: brightness(.92) saturate(1.05); transform: translateY(var(--y, 0px)) scale(1); }
+      50%{ filter: brightness(1.28) saturate(1.15); transform: translateY(var(--y, 0px)) scale(1.03); }
+    }
+    .bulb .glass{
+      position:absolute; inset:0;
+      border-radius: inherit;
+      background:
+        radial-gradient(circle at 35% 28%, rgba(255,255,255,.70), rgba(255,255,255,0) 45%),
+        radial-gradient(circle at 50% 55%, var(--c0), var(--c1));
+      box-shadow:
+        0 0 18px rgba(255,180,120,.10),
+        0 0 26px var(--glowc, rgba(255,160,90,.28));
+      animation: breathe calc(2.0s + var(--t, 0s)) ease-in-out infinite;
+      transform: translateY(var(--y, 0px));
+    }
+    @media (prefers-reduced-motion: reduce){
+      .bulb .glass{ animation:none; }
+    }
+
+    /* =========================================================
+       Window
+    ========================================================== */
+    .window{
+      position:absolute;
+      top: 110px;
+      left: 18px;
+      width: min(360px, 52%);
+      height: 240px;
+      border-radius: 18px;
+      z-index:3;
+      background:
+        radial-gradient(240px 180px at 70% 20%, rgba(255,220,170,.10), transparent 62%),
+        linear-gradient(180deg, rgba(255,240,220,.10), rgba(0,0,0,.16)),
+        linear-gradient(180deg, rgba(35,18,12,.35), rgba(0,0,0,.30));
+      border: 1px solid rgba(255,220,180,.15);
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .window .pane{
+      position:absolute; inset:14px;
+      border-radius: 14px;
+      background:
+        radial-gradient(260px 220px at 50% 0%, rgba(255,220,180,.10), transparent 60%),
+        radial-gradient(120px 120px at 30% 30%, rgba(255,255,255,.06), transparent 65%),
+        linear-gradient(180deg, rgba(20,10,8,.72), rgba(10,6,5,.82));
+      border: 1px solid rgba(255,220,180,.12);
+      overflow:hidden;
+    }
+    .window .outside{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(280px 200px at 40% 10%, rgba(255,200,140,.08), transparent 60%),
+        radial-gradient(240px 160px at 70% 30%, rgba(255,160,90,.06), transparent 62%),
+        linear-gradient(180deg, rgba(16,10,10,.92), rgba(6,4,5,.92));
+      filter: saturate(1.05);
+    }
+    .window .cross{ position:absolute; inset:0; }
+    .window .cross::before,
+    .window .cross::after{
+      content:"";
+      position:absolute;
+      background: linear-gradient(180deg, rgba(255,220,180,.35), rgba(0,0,0,.35));
+      opacity:.65;
+      box-shadow: 0 0 18px rgba(0,0,0,.25);
+    }
+    .window .cross::before{ width: 3px; top:0; bottom:0; left:50%; transform:translateX(-50%); }
+    .window .cross::after{ height: 3px; left:0; right:0; top:50%; transform:translateY(-50%); }
+    .window .frost{
+      position:absolute; inset:-30px;
+      pointer-events:none;
+      background:
+        radial-gradient(120px 90px at 12% 12%, rgba(255,255,255,.08), transparent 60%),
+        radial-gradient(120px 90px at 88% 16%, rgba(255,255,255,.06), transparent 62%),
+        radial-gradient(140px 110px at 18% 86%, rgba(255,255,255,.06), transparent 64%),
+        radial-gradient(140px 110px at 86% 84%, rgba(255,255,255,.05), transparent 64%);
+      opacity:.8;
+    }
+
+    /* =========================================================
+       Stage layout
+    ========================================================== */
+    .stage{
+      position:absolute;
+      inset: 90px 18px 18px 18px;
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 18px;
+      align-items:end;
+      z-index:4;
+    }
+    .leftCol, .rightCol{
+      position:relative;
+      height:100%;
+      min-height: 520px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, var(--card), rgba(0,0,0,0));
+      border: 1px solid rgba(255,220,180,.10);
+      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .leftCol{
+      padding: 18px 16px 16px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      gap: 14px;
+    }
+    .rightCol{
+      padding: 16px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      gap: 14px;
+    }
+    @media (max-width: 860px){
+      .stage{ grid-template-columns: 1fr; inset: 98px 14px 14px 14px; }
+      .window{ top: 102px; left: 14px; width: calc(100% - 28px); height: 200px; }
+      header{ top: 14px; left: 14px; right:14px; }
+      .hud{ display:none; }
+      .leftCol,.rightCol{ min-height: 420px; }
+    }
+
+    /* =========================================================
+       Mini-game HUD (inside left card)
+    ========================================================== */
+    .miniHud{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,240,220,.10), rgba(255,210,170,.05));
+      border: 1px solid rgba(255,220,180,.12);
+      box-shadow: 0 10px 24px rgba(0,0,0,.24);
+      color: rgba(255,242,225,.9);
+    }
+    .miniHud .l{
+      display:flex; flex-direction:column; gap:2px;
+      min-width: 0;
+    }
+    .miniHud strong{ font-size: 13px; }
+    .miniHud small{ color: rgba(255,242,225,.74); }
+    .miniHud .r{
+      display:flex; gap:10px; align-items:center;
+      flex:0 0 auto;
+    }
+    .chip{
+      font-size:12px;
+      padding: 6px 10px;
+      border-radius:999px;
+      background: rgba(255,180,120,.14);
+      border: 1px solid rgba(255,220,180,.12);
+      color: rgba(255,242,225,.92);
+      white-space:nowrap;
+    }
+    .btn{
+      pointer-events:auto;
+      cursor:pointer;
+      border:0;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,185,120,.22), rgba(255,120,90,.16));
+      color: rgba(255,250,245,.94);
+      box-shadow: 0 10px 22px rgba(0,0,0,.30), 0 0 22px rgba(255,160,90,.12);
+      transition: transform .12s ease, filter .18s ease;
+      font-weight: 750;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.08); }
+    .btn:active{ transform: translateY(0px); filter: brightness(.98); }
+    .btn:focus-visible{ outline: 2px solid rgba(255,210,160,.55); outline-offset: 2px; }
+
+    /* =========================================================
+       Tree (better look + interactive ornaments)
+    ========================================================== */
+    .treeWrap{
+      position:relative;
+      width:100%;
+      height: 72%;
+      min-height: 360px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding-bottom: 10px;
+    }
+    .treeBaseGlow{
+      position:absolute;
+      bottom: 26px;
+      width: min(460px, 84%);
+      height: 120px;
+      background: radial-gradient(closest-side at 50% 60%, rgba(255,170,90,.22), transparent 70%);
+      opacity:.85;
+      pointer-events:none;
+    }
+
+    .tree{
+      position:relative;
+      width:min(470px, 92%);
+      height:min(560px, 96%);
+      user-select:none;
+      transform: translateY(8px);
+    }
+
+    /* Tree silhouette */
+    .treeSvg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      filter: drop-shadow(0 16px 24px rgba(0,0,0,.30));
+    }
+
+    /* Tree lights layer toggled by CSS variable */
+    .treeLights{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      transition: opacity .25s ease, filter .25s ease;
+      opacity: var(--treeOn);
+    }
+
+    @keyframes twinkle{
+      0%,100%{ opacity:.55; transform: translate(-50%, -50%) scale(.92); filter: brightness(.95); }
+      50%{ opacity:1; transform: translate(-50%, -50%) scale(1.10); filter: brightness(1.20); }
+    }
+    .treeLight{
+      position:absolute;
+      width: 10px; height: 10px;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 35% 35%, rgba(255,255,255,.9), rgba(255,255,255,0) 45%),
+        radial-gradient(circle at 50% 50%, var(--lc0), var(--lc1));
+      box-shadow: 0 0 14px var(--lg), 0 0 26px rgba(255,200,150,.10);
+      animation: twinkle calc(1.6s + var(--d, 0s)) ease-in-out infinite;
+      transform: translate(-50%, -50%);
+      filter: saturate(1.1);
+    }
+    @media (prefers-reduced-motion: reduce){
+      .treeLight{ animation:none; opacity:.75; }
+    }
+
+    /* Clickable ornaments (mini-game) */
+    .ornBtn{
+      position:absolute;
+      width: 22px; height: 22px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(255,255,255,.14);
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.72), rgba(255,255,255,0) 42%),
+        radial-gradient(circle at 50% 55%, var(--o0), var(--o1));
+      box-shadow: 0 12px 18px rgba(0,0,0,.24), 0 0 16px rgba(255,200,150,.12);
+      cursor:pointer;
+      transition: transform .12s ease, filter .18s ease, opacity .18s ease;
+      outline:none;
+    }
+    .ornBtn:hover{ transform: translate(-50%, -50%) scale(1.06); filter: brightness(1.08); }
+    .ornBtn:active{ transform: translate(-50%, -50%) scale(0.98); }
+    .ornBtn:focus-visible{ outline: 2px solid rgba(255,210,160,.55); outline-offset: 2px; }
+    .ornBtn.collected{
+      opacity: .18;
+      filter: grayscale(.35) brightness(.9);
+      pointer-events:none;
+    }
+    .pop{
+      position:absolute;
+      left:50%; top:50%;
+      width: 56px; height: 56px;
+      transform: translate(-50%,-50%) scale(.65);
+      border-radius: 999px;
+      background: radial-gradient(circle at 50% 50%, rgba(255,210,160,.28), transparent 62%);
+      opacity:0;
+      pointer-events:none;
+      mix-blend-mode: screen;
+      animation: pop 520ms ease-out forwards;
+    }
+    @keyframes pop{
+      0%{ opacity:0; transform: translate(-50%,-50%) scale(.65); }
+      20%{ opacity:.9; }
+      100%{ opacity:0; transform: translate(-50%,-50%) scale(1.25); }
+    }
+
+    /* =========================================================
+       Fireplace
+    ========================================================== */
+    .fireplaceWrap{
+      position:relative;
+      width:100%;
+      height: 72%;
+      min-height: 320px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding-bottom: 8px;
+    }
+    .mantle{
+      position:absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(420px, 92%);
+      height: 24px;
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,.14), rgba(255,255,255,0) 55%),
+        linear-gradient(180deg, rgba(255,210,170,.12), rgba(0,0,0,.24)),
+        linear-gradient(180deg, #5b2f1a, #2b140c);
+      box-shadow: 0 14px 24px rgba(0,0,0,.35);
+      z-index:2;
+    }
+    .fireplace{
+      position:relative;
+      width: min(460px, 100%);
+      height: min(420px, 92%);
+      border-radius: 22px;
+      background:
+        radial-gradient(600px 320px at 50% 0%, rgba(255,200,140,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,220,180,.10), rgba(0,0,0,.16)),
+        linear-gradient(180deg, #3a2015, #20100b);
+      border: 1px solid rgba(255,220,180,.14);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .fireGlow{
+      position:absolute;
+      left:50%;
+      bottom: 84px;
+      transform: translateX(-50%);
+      width: 92%;
+      height: 70%;
+      pointer-events:none;
+      background:
+        radial-gradient(320px 240px at 50% 72%, rgba(255,160,90,.26), transparent 65%),
+        radial-gradient(260px 200px at 50% 78%, rgba(255,120,90,.16), transparent 65%);
+      mix-blend-mode: screen;
+      opacity:.9;
+      z-index:2;
+    }
+    .hearth{
+      position:absolute;
+      left:50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      width: 92%;
+      height: 54px;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.10), rgba(255,255,255,0) 55%),
+        linear-gradient(180deg, rgba(255,210,170,.08), rgba(0,0,0,.30)),
+        linear-gradient(180deg, #3c1d11, #1a0c08);
+      box-shadow: 0 16px 28px rgba(0,0,0,.40);
+      z-index:2;
+    }
+    .opening{
+      position:absolute;
+      left:50%;
+      bottom: 86px;
+      transform: translateX(-50%);
+      width: 78%;
+      height: 56%;
+      border-radius: 18px;
+      background:
+        radial-gradient(300px 220px at 50% 90%, rgba(255,160,90,.20), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.92), rgba(0,0,0,.78));
+      border: 1px solid rgba(255,220,180,.10);
+      box-shadow: inset 0 18px 34px rgba(0,0,0,.55);
+      overflow:hidden;
+      cursor:pointer;
+      z-index:1;
+    }
+    .opening:focus-visible{ outline: 2px solid rgba(255,210,160,.50); outline-offset: 2px; }
+    .logs{
+      position:absolute;
+      left:50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      width: 86%;
+      height: 36%;
+      pointer-events:none;
+      z-index:1;
+    }
+    .log{
+      position:absolute;
+      bottom: 18px;
+      width: 56%;
+      height: 18%;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.12), rgba(255,255,255,0) 55%),
+        linear-gradient(180deg, rgba(255,210,170,.06), rgba(0,0,0,.28)),
+        linear-gradient(180deg, #5a2c18, #2a140c);
+      box-shadow: 0 12px 18px rgba(0,0,0,.35);
+      border: 1px solid rgba(255,220,180,.10);
+    }
+    .log.lA{ left: 10%; transform: rotate(-8deg); }
+    .log.lB{ right: 8%; transform: rotate(10deg); width: 52%; }
+    .log.lC{ left: 26%; bottom: 6px; width: 60%; height: 20%; transform: rotate(2deg); filter: brightness(.95); }
+
+    .flames{
+      position:absolute;
+      left:50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      width: 80%;
+      height: 76%;
+      pointer-events:none;
+      z-index:2;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap: 10px;
+      filter: drop-shadow(0 0 18px rgba(255,150,80,.25));
+      --intensity: var(--fire);
+    }
+    .flame{
+      width: 18%;
+      height: calc(58% * var(--intensity));
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.70), rgba(255,255,255,0) 45%),
+        radial-gradient(circle at 50% 60%, rgba(255,220,160,.95), rgba(255,160,90,.85) 55%, rgba(255,120,90,.35) 78%, rgba(0,0,0,0) 82%);
+      transform: translateY(0) scaleX(.92);
+      animation: flicker 1.12s ease-in-out infinite;
+      mix-blend-mode: screen;
+      opacity:.92;
+    }
+    .flame.f2{ height: calc(70% * var(--intensity)); animation-duration: 1.03s; }
+    .flame.f3{ height: calc(62% * var(--intensity)); animation-duration: .95s; }
+    .flame.f4{ height: calc(74% * var(--intensity)); animation-duration: 1.20s; }
+    .flame.f5{ height: calc(60% * var(--intensity)); animation-duration: 1.07s; }
+    @keyframes flicker{
+      0%,100%{ transform: translateY(0) scaleX(.92); filter: brightness(1.0); }
+      35%{ transform: translateY(-6px) scaleX(.98); filter: brightness(1.12); }
+      60%{ transform: translateY(-2px) scaleX(.94); filter: brightness(1.05); }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .flame{ animation:none; opacity:.75; }
+    }
+
+    .fireHint{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,240,220,.10), rgba(255,210,170,.05));
+      border: 1px solid rgba(255,220,180,.12);
+      box-shadow: 0 10px 24px rgba(0,0,0,.24);
+      color: rgba(255,242,225,.9);
+    }
+    .fireHint strong{ font-size: 13px; }
+
+    /* =========================================================
+       Gift Box (center overlay) - DEFAULT HIDDEN
+       It will be shown ONLY after the tree mini-game is completed.
+    ========================================================== */
+    .giftCenter{
+      position:absolute;
+      left:50%;
+      top: 56%;
+      transform: translate(-50%, -50%);
+      z-index:7;
+      width: min(360px, 76vw);
+      pointer-events:auto;
+      display:none;          /* default hidden */
+      opacity:0;
+      transform-origin: 50% 60%;
+    }
+    .giftCenter.revealed{
+      display:block;
+      animation: giftIn 520ms cubic-bezier(.2,.9,.2,1) forwards;
+    }
+    @keyframes giftIn{
+      from{ opacity:0; transform: translate(-50%,-50%) scale(.92); }
+      to{ opacity:1; transform: translate(-50%,-50%) scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .giftCenter.revealed{ animation:none; opacity:1; }
+    }
+
+    .giftCard{
+      position:relative;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255,240,220,.10), rgba(255,210,170,.05));
+      border: 1px solid rgba(255,220,180,.14);
+      box-shadow: 0 18px 50px rgba(0,0,0,.42);
+      backdrop-filter: blur(6px);
+      padding: 14px 14px 16px;
+      overflow:hidden;
+    }
+    .giftRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 10px;
+    }
+    .giftRow .hintText{
+      color: rgba(255,242,225,.86);
+      font-size: 12px;
+      line-height:1.35;
+    }
+    .giftRow .hintText b{ color: rgba(255,250,245,.94); }
+    .giftRow .tiny{
+      font-size: 11.5px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,180,120,.14);
+      border: 1px solid rgba(255,220,180,.12);
+      color: rgba(255,242,225,.92);
+      white-space:nowrap;
+    }
+
+    .giftBox{
+      position:relative;
+      width: 100%;
+      height: 180px;
+      border-radius: 18px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      cursor:pointer;
+      user-select:none;
+      outline:none;
+      background:
+        radial-gradient(240px 140px at 50% 15%, rgba(255,210,160,.16), transparent 65%),
+        linear-gradient(180deg, rgba(0,0,0,.06), rgba(0,0,0,.18));
+    }
+    .giftBox:focus-visible{ outline: 2px solid rgba(255,210,160,.55); outline-offset: 2px; }
+
+    .boxBody{
+      position:absolute;
+      bottom: 16px;
+      width: 78%;
+      height: 58%;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), rgba(255,255,255,0) 55%),
+        linear-gradient(180deg, rgba(255,210,170,.10), rgba(0,0,0,.24)),
+        linear-gradient(135deg, #ff7a5a, #ffb26b);
+      box-shadow: 0 22px 40px rgba(0,0,0,.40);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .boxLid{
+      position:absolute;
+      bottom: calc(16px + 58% - 8px);
+      width: 82%;
+      height: 22%;
+      border-radius: 16px;
+      transform-origin: 20% 90%;
+      transform: rotate(0deg) translateY(0);
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), rgba(255,255,255,0) 55%),
+        linear-gradient(180deg, rgba(255,210,170,.10), rgba(0,0,0,.22)),
+        linear-gradient(135deg, #ff9a74, #ffd2a6);
+      box-shadow: 0 18px 32px rgba(0,0,0,.34);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: transform .42s cubic-bezier(.2,.9,.2,1), filter .42s ease;
+    }
+    .ribbonV{
+      position:absolute;
+      bottom: 16px;
+      width: 10%;
+      height: 80%;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(0,0,0,.18)),
+                  linear-gradient(180deg, #8cf0c5, #3bd6a1);
+      box-shadow: 0 14px 26px rgba(0,0,0,.22);
+      opacity:.95;
+    }
+    .ribbonH{
+      position:absolute;
+      bottom: calc(16px + 34%);
+      width: 82%;
+      height: 14%;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(0,0,0,.18)),
+                  linear-gradient(90deg, #8cf0c5, #3bd6a1);
+      box-shadow: 0 14px 26px rgba(0,0,0,.20);
+      opacity:.95;
+    }
+    .bow{
+      position:absolute;
+      bottom: calc(16px + 58% + 8px);
+      width: 56px;
+      height: 34px;
+      transform: translateY(-10px);
+      filter: drop-shadow(0 10px 16px rgba(0,0,0,.25));
+      transition: transform .42s cubic-bezier(.2,.9,.2,1);
+    }
+    .bow::before,.bow::after{
+      content:"";
+      position:absolute;
+      width: 30px; height: 26px;
+      border-radius: 999px 999px 18px 18px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.30), rgba(255,255,255,0) 55%),
+        linear-gradient(180deg, rgba(255,255,255,.18), rgba(0,0,0,.14)),
+        linear-gradient(135deg, #8cf0c5, #3bd6a1);
+      border: 1px solid rgba(255,255,255,.12);
+      top: 6px;
+    }
+    .bow::before{ left:0; transform: rotate(-10deg); }
+    .bow::after{ right:0; transform: rotate(10deg); }
+    .knot{
+      position:absolute;
+      left:50%; top: 14px;
+      transform: translateX(-50%);
+      width: 16px; height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,.25), rgba(0,0,0,.18)),
+                  linear-gradient(135deg, #8cf0c5, #3bd6a1);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .giftLabel{
+      position:absolute;
+      bottom: 6px;
+      font-size: 12px;
+      color: rgba(255,242,225,.88);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.24);
+      border: 1px solid rgba(255,220,180,.10);
+      box-shadow: 0 10px 18px rgba(0,0,0,.25);
+    }
+
+    .giftCenter.open .boxLid{
+      transform: rotate(-22deg) translate(-8px, -12px);
+      filter: brightness(1.05);
+    }
+    .giftCenter.open .bow{
+      transform: translateY(-18px) rotate(-8deg);
+    }
+
+    .messageWrap{
+      margin-top: 12px;
+      border-radius: 16px;
+      padding: 12px 12px;
+      background: linear-gradient(180deg, rgba(10,6,5,.62), rgba(10,6,5,.78));
+      border: 1px solid rgba(255,220,180,.14);
+      box-shadow: 0 14px 28px rgba(0,0,0,.38);
+      overflow:hidden;
+      max-height: 0;
+      opacity:0;
+      transform: translateY(8px);
+      transition: max-height .45s cubic-bezier(.2,.9,.2,1), opacity .25s ease, transform .25s ease;
+    }
+    .giftCenter.open .messageWrap{
+      max-height: 220px;
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    .colorText{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 2px;
+      font-weight: 900;
+      font-size: clamp(18px, 3.0vw, 26px);
+      line-height: 1.15;
+      letter-spacing: .2px;
+      text-shadow: 0 0 16px rgba(255,160,90,.14);
+    }
+    .colorText .ch{
+      display:inline-block;
+      transform: translateY(10px) rotate(-2deg);
+      opacity:0;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.28));
+      animation: in 520ms cubic-bezier(.2,.9,.2,1) forwards;
+      animation-delay: calc(var(--i) * 35ms);
+    }
+    @keyframes in{
+      to{ transform: translateY(0) rotate(0deg); opacity:1; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .colorText .ch{ animation:none; opacity:1; transform:none; }
+      .giftCenter.open .messageWrap{ transition:none; }
+      .boxLid,.bow{ transition:none; }
+    }
+
+    .subLine{
+      margin-top: 6px;
+      color: rgba(255,242,225,.78);
+      font-size: 12px;
+      line-height:1.4;
+    }
+
+    .sparkles{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .22s ease;
+      mix-blend-mode: screen;
+    }
+    .giftCenter.open .sparkles{ opacity:1; }
+    .sparkles::before{
+      content:"";
+      position:absolute; inset:-40px;
+      background:
+        radial-gradient(6px 6px at 20% 30%, rgba(255,255,255,.26), transparent 60%),
+        radial-gradient(5px 5px at 40% 18%, rgba(255,210,160,.22), transparent 60%),
+        radial-gradient(5px 5px at 70% 35%, rgba(255,190,130,.18), transparent 62%),
+        radial-gradient(6px 6px at 78% 22%, rgba(255,255,255,.20), transparent 62%),
+        radial-gradient(5px 5px at 55% 40%, rgba(255,210,160,.18), transparent 62%),
+        radial-gradient(6px 6px at 30% 44%, rgba(255,255,255,.18), transparent 62%);
+      animation: sparkle 1.2s ease-in-out infinite;
+      opacity:.9;
+    }
+    @keyframes sparkle{
+      0%,100%{ transform: translateY(0); filter: brightness(1.0); }
+      50%{ transform: translateY(-3px); filter: brightness(1.15); }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .sparkles::before{ animation:none; }
+    }
+
+    /* =========================================================
+       Footer controls
+    ========================================================== */
+    .cornerControls{
+      position:absolute;
+      right: 16px;
+      bottom: 16px;
+      z-index:8;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      pointer-events:auto;
+    }
+    .toggle{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(20,10,8,.74), rgba(10,6,5,.78));
+      border: 1px solid rgba(255,220,180,.14);
+      box-shadow: 0 16px 34px rgba(0,0,0,.42);
+      color: rgba(255,242,225,.88);
+      font-size: 12px;
+    }
+    .switch{
+      width: 38px; height: 22px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,220,180,.12);
+      position:relative;
+      cursor:pointer;
+      outline:none;
+    }
+    .knob{
+      position:absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      left: 3px;
+      width: 16px; height: 16px;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.65), rgba(255,255,255,0) 45%),
+        radial-gradient(circle at 50% 50%, rgba(255,210,160,.9), rgba(255,120,90,.45));
+      box-shadow: 0 0 14px rgba(255,160,90,.25);
+      transition: left .18s ease;
+    }
+    .switch.on .knob{ left: 19px; }
+    .switch:focus-visible{ outline: 2px solid rgba(255,210,160,.55); outline-offset: 2px; }
+
+    /* =========================================================
+       Accessibility helpers
+    ========================================================== */
+    .sr-only{
+      position:absolute !important;
+      width:1px; height:1px;
+      padding:0; margin:-1px;
+      overflow:hidden; clip:rect(0,0,0,0);
+      white-space:nowrap; border:0;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="snowCanvas" aria-hidden="true"></canvas>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <main class="scene" role="main">
+    <section class="room" aria-label="Warm Christmas room scene">
+      <div class="wall" aria-hidden="true"></div>
+      <div class="bokeh" aria-hidden="true"></div>
+      <div class="floor" aria-hidden="true"></div>
+
+      <!-- String lights -->
+      <div class="stringLights" aria-hidden="true">
+        <div class="wire"></div>
+        <div class="bulbs" id="topBulbs"></div>
+      </div>
+
+      <!-- Header -->
+      <header>
+        <div class="titleCard">
+          <h1>昕昕的圣诞奇妙屋</h1>
+        </div>
+        <div class="hud" aria-label="Game hud">
+          <span class="pip" aria-hidden="true"></span>
+          <span>小游戏：点树上的球球 <b id="score">0</b>/<b id="target">8</b></span>
+        </div>
+      </header>
+
+      <!-- Window -->
+      <div class="window" aria-hidden="true">
+        <div class="pane">
+          <div class="outside"></div>
+          <div class="cross"></div>
+          <div class="frost"></div>
+        </div>
+      </div>
+
+      <!-- Center Gift (DEFAULT HIDDEN; reveal after game complete) -->
+      <div class="giftCenter" id="giftCenter" aria-label="Gift box reward">
+        <div class="giftCard">
+          <div class="giftRow">
+            <div class="hintText">
+              <b>恭喜通关！</b> 点击礼盒开启祝福（五颜六色✨）
+            </div>
+            <div class="tiny">Tap / Click</div>
+          </div>
+
+          <div class="giftBox" id="giftBox" role="button" tabindex="0" aria-expanded="false" aria-label="Open the gift box to reveal message">
+            <div class="sparkles" aria-hidden="true"></div>
+
+            <div class="boxLid" aria-hidden="true"></div>
+
+            <div class="boxBody" aria-hidden="true"></div>
+            <div class="ribbonV" aria-hidden="true"></div>
+            <div class="ribbonH" aria-hidden="true"></div>
+
+            <div class="bow" aria-hidden="true">
+              <div class="knot"></div>
+            </div>
+
+            <div class="giftLabel" aria-hidden="true">奖励 🎁</div>
+          </div>
+
+          <div class="messageWrap" id="messageWrap" aria-live="polite">
+            <div class="colorText" id="colorText" aria-label="Colorful Christmas message"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage -->
+      <div class="stage" aria-label="Christmas elements">
+        <!-- Left: Tree -->
+        <div class="leftCol" aria-label="Christmas tree area">
+          <div class="treeWrap">
+            <div class="treeBaseGlow" aria-hidden="true"></div>
+
+            <div class="tree" id="tree" role="img" aria-label="A big decorated Christmas tree with interactive ornaments">
+              <!-- nicer tree via inline SVG -->
+              <svg class="treeSvg" viewBox="0 0 520 620" aria-hidden="true">
+                <defs>
+                  <linearGradient id="treeG" x1="120" y1="120" x2="420" y2="560" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stop-color="#2fbf86"/>
+                    <stop offset="0.55" stop-color="#13704b"/>
+                    <stop offset="1" stop-color="#0b3c2a"/>
+                  </linearGradient>
+                  <linearGradient id="treeG2" x1="120" y1="140" x2="420" y2="580" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stop-color="rgba(255,255,255,.12)"/>
+                    <stop offset="1" stop-color="rgba(0,0,0,.25)"/>
+                  </linearGradient>
+                  <linearGradient id="starG" x1="200" y1="40" x2="320" y2="140" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stop-color="#ffe6a7"/>
+                    <stop offset="0.55" stop-color="#ffb26b"/>
+                    <stop offset="1" stop-color="#ff7a5a"/>
+                  </linearGradient>
+                </defs>
+
+                <circle cx="260" cy="92" r="62" fill="rgba(255,205,120,.18)"/>
+                <path d="M260 34 L276 78 L322 78 L286 104 L300 150 L260 124 L220 150 L234 104 L198 78 L244 78 Z"
+                      fill="url(#starG)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+
+                <path d="M260 112
+                         C228 148 168 184 140 210
+                         C170 214 192 224 208 238
+                         C170 252 130 286 112 310
+                         C148 316 180 332 200 350
+                         C162 366 118 404 96 434
+                         C140 440 184 460 210 484
+                         C170 506 122 548 96 578
+                         L424 578
+                         C398 548 350 506 310 484
+                         C336 460 380 440 424 434
+                         C402 404 358 366 320 350
+                         C340 332 372 316 408 310
+                         C390 286 350 252 312 238
+                         C328 224 350 214 380 210
+                         C352 184 292 148 260 112 Z"
+                      fill="url(#treeG)"/>
+                <path d="M260 112
+                         C228 148 168 184 140 210
+                         C170 214 192 224 208 238
+                         C170 252 130 286 112 310
+                         C148 316 180 332 200 350
+                         C162 366 118 404 96 434
+                         C140 440 184 460 210 484
+                         C170 506 122 548 96 578
+                         L424 578
+                         C398 548 350 506 310 484
+                         C336 460 380 440 424 434
+                         C402 404 358 366 320 350
+                         C340 332 372 316 408 310
+                         C390 286 350 252 312 238
+                         C328 224 350 214 380 210
+                         C352 184 292 148 260 112 Z"
+                      fill="url(#treeG2)"/>
+
+                <path d="M156 258 C220 300 300 300 364 258" fill="none" stroke="rgba(255,220,170,.22)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M138 350 C216 402 304 402 382 350" fill="none" stroke="rgba(255,220,170,.18)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M122 454 C214 522 306 522 398 454" fill="none" stroke="rgba(255,220,170,.16)" stroke-width="10" stroke-linecap="round"/>
+
+                <rect x="236" y="560" width="48" height="58" rx="12" fill="#6b3b20" opacity=".92"/>
+                <rect x="150" y="592" width="220" height="30" rx="15" fill="#3b1f12" opacity=".92"/>
+              </svg>
+
+              <div class="treeLights" id="treeLights" aria-hidden="true"></div>
+              <div id="ornaments"></div>
+            </div>
+          </div>
+
+          <div class="miniHud" role="group" aria-label="Tree controls">
+            <div class="l">
+              <strong>点亮圣诞树 &amp; 收集装饰</strong>
+              <small>点完 8 个球球后，礼盒奖励会出现</small>
+            </div>
+            <div class="r">
+              <span class="chip" id="comboChip" aria-hidden="true">Combo x1</span>
+              <button class="btn" id="toggleTree" type="button" aria-pressed="true">开关彩灯</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Fireplace -->
+        <div class="rightCol" aria-label="Fireplace area">
+          <div class="fireplaceWrap">
+            <div class="mantle" aria-hidden="true"></div>
+
+            <div class="fireplace" role="img" aria-label="A cozy fireplace with animated flames">
+              <div class="fireGlow" aria-hidden="true"></div>
+
+              <div class="opening" id="fireOpening" tabindex="0" role="button"
+                   aria-label="Click to change flame intensity slightly">
+                <div class="logs" aria-hidden="true">
+                  <div class="log lA"></div>
+                  <div class="log lB"></div>
+                  <div class="log lC"></div>
+                </div>
+
+                <div class="flames" id="flames" aria-hidden="true">
+                  <div class="flame f1"></div>
+                  <div class="flame f2"></div>
+                  <div class="flame f3"></div>
+                  <div class="flame f4"></div>
+                  <div class="flame f5"></div>
+                </div>
+              </div>
+
+              <div class="hearth" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div class="fireHint" aria-label="Fireplace hint">
+            <div>
+              <strong>壁炉互动</strong>
+              <div style="font-size:12px;color:rgba(255,242,225,.78);margin-top:2px;">
+                点击火焰口区域，火焰会“更旺/更柔”和一点点
+              </div>
+            </div>
+            <span class="chip" aria-hidden="true">Warm &amp; Cozy</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom-right controls -->
+      <div class="cornerControls" aria-label="Controls">
+        <div class="toggle" role="group" aria-label="Snow toggle">
+          <span>雪花</span>
+          <div class="switch on" id="snowSwitch" role="switch" tabindex="0" aria-checked="true" aria-label="Toggle snowfall">
+            <div class="knob" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+
+      <span class="sr-only" id="a11yNote">This page contains animations. If you enable “Reduce motion”, snow and effects will be reduced.</span>
+    </section>
+  </main>
+
+  <script>
+    /* =========================================================
+       Top string lights
+    ========================================================== */
+    (function buildTopLights(){
+      const bulbs = document.getElementById('topBulbs');
+      const colors = [
+        ['rgba(255,220,160,.98)','rgba(255,160,90,.85)','rgba(255,170,90,.34)'],
+        ['rgba(255,255,255,.92)','rgba(255,210,160,.74)','rgba(255,220,170,.28)'],
+        ['rgba(255,190,130,.96)','rgba(255,120,90,.72)','rgba(255,160,90,.30)'],
+        ['rgba(210,255,230,.42)','rgba(120,255,200,.20)','rgba(120,255,200,.16)']
+      ];
+      const count = 14;
+      for(let i=0;i<count;i++){
+        const b = document.createElement('div');
+        b.className = 'bulb';
+        const g = document.createElement('div');
+        g.className = 'glass';
+        const c = colors[i % colors.length];
+        g.style.setProperty('--c0', c[0]);
+        g.style.setProperty('--c1', c[1]);
+        g.style.setProperty('--glowc', c[2]);
+        g.style.setProperty('--t', (Math.random()*1.2).toFixed(2)+'s');
+        g.style.setProperty('--y', ((Math.sin(i)*2)|0) + 'px');
+        b.appendChild(g);
+        bulbs.appendChild(b);
+      }
+    })();
+
+    /* =========================================================
+       Gift box reveal (reward) - hidden until game complete
+       Message content unchanged (same as before).
+    ========================================================== */
+    (function initGift(){
+      const center = document.getElementById('giftCenter');
+      const box = document.getElementById('giftBox');
+      const colorText = document.getElementById('colorText');
+
+      const message = "Merry Christmas  大宝！";
+      let built = false;
+
+      function buildColorText(){
+        if(built) return;
+        built = true;
+        colorText.textContent = "";
+        let idx = 0;
+        for(const ch of message){
+          const span = document.createElement('span');
+          span.className = 'ch';
+          span.style.setProperty('--i', idx++);
+          const hue = Math.floor(Math.random()*360);
+          const sat = 92;
+          const light = 72;
+          span.style.color = `hsl(${hue} ${sat}% ${light}%)`;
+          span.textContent = ch === " " ? "\u00A0" : ch;
+          colorText.appendChild(span);
+        }
+      }
+
+      function toggleOpen(){
+        if(!center.classList.contains('revealed')) return; // guard
+        const open = !center.classList.contains('open');
+        center.classList.toggle('open', open);
+        box.setAttribute('aria-expanded', String(open));
+        if(open) buildColorText();
+      }
+
+      box.addEventListener('click', toggleOpen);
+      box.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          toggleOpen();
+        }
+      });
+
+      // Expose minimal API for game completion
+      window.__gift = {
+        reveal(){
+          if(center.classList.contains('revealed')) return;
+          center.classList.add('revealed');
+          // reset open state when first revealed
+          center.classList.remove('open');
+          box.setAttribute('aria-expanded', 'false');
+        }
+      };
+    })();
+
+    /* =========================================================
+       Tree: lights toggle + ornament mini-game
+    ========================================================== */
+    (function initTreeGame(){
+      const lightsLayer = document.getElementById('treeLights');
+      const ornamentsLayer = document.getElementById('ornaments');
+      const toggleBtn = document.getElementById('toggleTree');
+      const scoreEl = document.getElementById('score');
+      const targetEl = document.getElementById('target');
+      const comboChip = document.getElementById('comboChip');
+
+      let on = true;
+      const applyLights = () => {
+        document.documentElement.style.setProperty('--treeOn', on ? 1 : 0);
+        toggleBtn.setAttribute('aria-pressed', String(on));
+      };
+      applyLights();
+      toggleBtn.addEventListener('click', ()=>{ on = !on; applyLights(); });
+
+      const lightColors = [
+        ['rgba(255,220,160,.95)','rgba(255,160,90,.82)','rgba(255,170,90,.45)'],
+        ['rgba(255,255,255,.90)','rgba(255,210,160,.72)','rgba(255,220,180,.30)'],
+        ['rgba(255,190,130,.92)','rgba(255,120,90,.62)','rgba(255,140,100,.34)']
+      ];
+      const lightPoints = [];
+      const rows = [
+        {y:18, n:6, x0:50, spread:28},
+        {y:28, n:8, x0:50, spread:42},
+        {y:40, n:10, x0:50, spread:56},
+        {y:52, n:11, x0:50, spread:64},
+        {y:64, n:12, x0:50, spread:72},
+        {y:74, n:10, x0:50, spread:78}
+      ];
+      rows.forEach(r=>{
+        for(let i=0;i<r.n;i++){
+          const t = (i/(r.n-1 || 1))*2 - 1;
+          const x = r.x0 + t*(r.spread/2) + (Math.random()*3.5-1.75);
+          const y = r.y + (Math.random()*2.8-1.4);
+          lightPoints.push({x,y});
+        }
+      });
+      lightPoints.forEach((p, idx)=>{
+        const l = document.createElement('div');
+        l.className='treeLight';
+        l.style.left = p.x+'%';
+        l.style.top  = p.y+'%';
+        l.style.setProperty('--d', (Math.random()*1.4).toFixed(2)+'s');
+        const cc = lightColors[idx % lightColors.length];
+        l.style.setProperty('--lc0', cc[0]);
+        l.style.setProperty('--lc1', cc[1]);
+        l.style.setProperty('--lg',  cc[2]);
+        lightsLayer.appendChild(l);
+      });
+
+      const TARGET = 8;
+      targetEl.textContent = String(TARGET);
+      let score = 0;
+      let combo = 1;
+      let lastHit = 0;
+      let done = false;
+
+      const ornColors = [
+        ['#ffe6a7','#ffb26b'],
+        ['#ffd2a6','#ff7a5a'],
+        ['#8cf0c5','#3bd6a1'],
+        ['#b6a2ff','#ff7a5a']
+      ];
+
+      const ornPos = [
+        {x:50,y:26},{x:42,y:33},{x:58,y:34},
+        {x:36,y:44},{x:64,y:45},
+        {x:46,y:54},{x:54,y:56},
+        {x:34,y:60},{x:66,y:61},
+        {x:41,y:70},{x:59,y:71}
+      ];
+
+      function makeOrn(i){
+        const b = document.createElement('button');
+        b.type = "button";
+        b.className = "ornBtn";
+        const c = ornColors[i % ornColors.length];
+        b.style.setProperty('--o0', c[0]);
+        b.style.setProperty('--o1', c[1]);
+        b.style.left = ornPos[i].x + '%';
+        b.style.top = ornPos[i].y + '%';
+        b.setAttribute('aria-label', 'Collect ornament');
+        b.addEventListener('click', () => hit(b));
+        return b;
+      }
+
+      function hit(btn){
+        if(btn.classList.contains('collected') || done) return;
+
+        const now = performance.now();
+        const within = (now - lastHit) < 900;
+        combo = within ? Math.min(5, combo + 1) : 1;
+        lastHit = now;
+
+        btn.classList.add('collected');
+        score = Math.min(TARGET, score + 1);
+        scoreEl.textContent = String(score);
+        comboChip.textContent = "Combo x" + combo;
+
+        const pop = document.createElement('div');
+        pop.className = 'pop';
+        btn.appendChild(pop);
+        pop.addEventListener('animationend', ()=> pop.remove(), { once:true });
+
+        if(score >= TARGET){
+          done = true;
+          comboChip.textContent = "Perfect!";
+          document.documentElement.style.setProperty('--treeOn', 1);
+
+          lightsLayer.style.filter = "brightness(1.35) saturate(1.15)";
+          setTimeout(()=> lightsLayer.style.filter = "", 900);
+
+          // Reveal the gift AFTER completing the mini-game
+          if(window.__gift && typeof window.__gift.reveal === 'function'){
+            window.__gift.reveal();
+          }
+        }
+      }
+
+      ornamentsLayer.textContent = "";
+      for(let i=0;i<TARGET;i++){
+        ornamentsLayer.appendChild(makeOrn(i));
+      }
+    })();
+
+    /* =========================================================
+       Fireplace interaction: change flame intensity slightly
+    ========================================================== */
+    (function initFire(){
+      const opening = document.getElementById('fireOpening');
+      const flames = document.getElementById('flames');
+
+      let intensity = 1;
+
+      function setIntensity(v){
+        intensity = Math.max(0.78, Math.min(1.28, v));
+        document.documentElement.style.setProperty('--fire', intensity.toFixed(2));
+        flames.style.setProperty('--intensity', intensity.toFixed(2));
+      }
+      setIntensity(1);
+
+      function bump(){
+        const delta = (Math.random()*0.28 - 0.14);
+        setIntensity(1 + delta);
+      }
+
+      opening.addEventListener('click', bump);
+      opening.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          bump();
+        }
+      });
+    })();
+
+    /* =========================================================
+       Snow: canvas (performant) + toggle
+    ========================================================== */
+    (function snow(){
+      const canvas = document.getElementById('snowCanvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+
+      const DPR = Math.min(2, window.devicePixelRatio || 1);
+      let W = 0, H = 0;
+
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const FLAKES = reduceMotion ? 30 : 48; // >= 30
+      let enabled = true;
+
+      const flakes = new Array(FLAKES).fill(0).map(() => makeFlake(true));
+
+      function resize(){
+        const r = canvas.getBoundingClientRect();
+        W = Math.max(1, Math.floor(r.width));
+        H = Math.max(1, Math.floor(r.height));
+        canvas.width = Math.floor(W * DPR);
+        canvas.height = Math.floor(H * DPR);
+        ctx.setTransform(DPR,0,0,DPR,0,0);
+      }
+      function rand(min, max){ return min + Math.random()*(max-min); }
+
+      function makeFlake(spawnTop){
+        const size = reduceMotion ? rand(1.7, 3.3) : rand(1.4, 4.8);
+        const speed = reduceMotion ? rand(10, 22) : rand(22, 62);
+        const drift = reduceMotion ? rand(-8, 8) : rand(-22, 22);
+        return {
+          x: rand(0, Math.max(1, W)),
+          y: spawnTop ? rand(-H, 0) : rand(0, Math.max(1, H)),
+          r: size,
+          vy: speed,
+          vx: drift,
+          phase: rand(0, Math.PI*2),
+          wobble: reduceMotion ? rand(2, 6) : rand(6, 18),
+          alpha: reduceMotion ? rand(0.48, 0.72) : rand(0.36, 0.78)
+        };
+      }
+
+      let resizeRAF = 0;
+      window.addEventListener('resize', ()=>{
+        if(resizeRAF) return;
+        resizeRAF = requestAnimationFrame(()=>{
+          resizeRAF = 0;
+          resize();
+        });
+      }, { passive:true });
+
+      resize();
+
+      function drawFlake(x,y,r,a){
+        ctx.globalAlpha = a;
+        const g = ctx.createRadialGradient(x-r*0.2, y-r*0.2, r*0.2, x, y, r*1.35);
+        g.addColorStop(0, 'rgba(255,255,255,0.92)');
+        g.addColorStop(0.45, 'rgba(255,255,255,0.35)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x,y,r*1.35,0,Math.PI*2);
+        ctx.fill();
+      }
+
+      const sw = document.getElementById('snowSwitch');
+      function setToggle(on){
+        enabled = on;
+        sw.classList.toggle('on', on);
+        sw.setAttribute('aria-checked', String(on));
+        canvas.style.opacity = on ? '.95' : '0';
+      }
+      setToggle(true);
+
+      function toggle(){
+        setToggle(!enabled);
+      }
+      sw.addEventListener('click', toggle);
+      sw.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          toggle();
+        }
+      });
+
+      let last = performance.now();
+      function tick(now){
+        const dt = Math.min(0.033, (now - last) / 1000);
+        last = now;
+
+        if(enabled){
+          ctx.clearRect(0,0,W,H);
+
+          ctx.globalAlpha = 0.10;
+          ctx.fillStyle = 'rgba(255,190,130,0.10)';
+          ctx.fillRect(0,0,W,H);
+          ctx.globalAlpha = 1;
+
+          for(let i=0;i<flakes.length;i++){
+            const f = flakes[i];
+            f.phase += dt * (reduceMotion ? 0.40 : 1.25);
+            const wob = Math.sin(f.phase) * f.wobble;
+
+            f.x += (f.vx * dt) + wob * dt;
+            f.y += (f.vy * dt);
+
+            if(f.y - f.r > H + 10 || f.x < -50 || f.x > W + 50){
+              flakes[i] = makeFlake(true);
+              flakes[i].x = rand(0, W);
+            }
+            drawFlake(f.x, f.y, f.r, f.alpha);
+          }
+        }
+
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>
